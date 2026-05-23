@@ -1,0 +1,616 @@
+# Standalone LiteLLM proxy config for a simple, high-quality model catalog.
+#
+# Public aliases:
+#   - rough-use: summaries, rewriting, stories, everyday content generation
+#   - coding: code generation, debugging, refactors, agentic coding
+#   - smart-mini: cheap/free small-model work with good quality
+#   - smart-large: stronger low-cost reasoning/general work
+#
+# Priority is expressed with litellm_params.order. Lower order wins, and
+# router_settings.enable_pre_call_checks must stay true for order filtering.
+
+model_list:
+  - model_name: rough-use
+    litellm_params:
+      model: "gemini/gemini-2.5-flash-lite"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 2
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-gemini-2-5-flash-lite
+      mode: chat
+      base_model: "gemini/gemini-2.5-flash-lite"
+      tags: ["rough-use", "free-tier", "gemini", "google"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "gemini/gemini-2.0-flash"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 4
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-gemini-2-0-flash
+      mode: chat
+      base_model: "gemini/gemini-2.0-flash"
+      tags: ["rough-use", "free-tier", "gemini", "google"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "gemini/gemini-2.0-flash-lite"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 3
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-gemini-2-0-flash-lite
+      mode: chat
+      base_model: "gemini/gemini-2.0-flash-lite"
+      tags: ["rough-use", "free-tier", "gemini", "google"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "groq/openai/gpt-oss-120b"
+      api_key: os.environ/GROQ_API_KEY
+      order: 1
+      rpm: 30
+      tpm: 6000
+      max_parallel_requests: 5
+    model_info:
+      id: rough-use-groq-gpt-oss-120b
+      mode: chat
+      base_model: "groq/openai/gpt-oss-120b"
+      tags: ["rough-use", "gpt-oss", "groq"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "cerebras/gpt-oss-120b"
+      api_key: os.environ/CEREBRAS_API_KEY
+      api_base: os.environ/CEREBRAS_API_BASE
+      extra_headers:
+        X-Cerebras-3rd-Party-Integration: litellm
+      order: 1
+      rpm: 10
+      tpm: 60000
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-cerebras-gpt-oss-120b
+      mode: chat
+      base_model: "cerebras/gpt-oss-120b"
+      tags: ["rough-use", "gpt-oss", "cerebras"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "mistral/mistral-large-latest"
+      api_key: os.environ/MISTRAL_API_KEY
+      order: 5
+      rpm: 2
+      tpm: 500000
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-mistral-large
+      mode: chat
+      base_model: "mistral/mistral-large-latest"
+      tags: ["rough-use", "mistral"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "openai/gpt-oss:120b"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 1
+      max_parallel_requests: 1
+    model_info:
+      id: rough-use-ollama-gpt-oss-120b
+      mode: chat
+      base_model: "openai/gpt-oss:120b"
+      tags: ["rough-use", "gpt-oss", "ollama-cloud"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "openrouter/openai/gpt-oss-120b:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 6
+      max_parallel_requests: 2
+    model_info:
+      id: rough-use-openrouter-gpt-oss-120b-free
+      mode: chat
+      base_model: "openrouter/openai/gpt-oss-120b:free"
+      tags: ["rough-use", "free", "openrouter", "gpt-oss"]
+
+  - model_name: rough-use
+    litellm_params:
+      model: "openrouter/openrouter/free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 7
+      max_parallel_requests: 1
+    model_info:
+      id: rough-use-openrouter-free-router
+      mode: chat
+      base_model: "openrouter/openrouter/free"
+      tags: ["rough-use", "free-router", "openrouter", "last-resort"]
+
+  - model_name: coding
+    litellm_params:
+      model: "cerebras/zai-glm-4.7"
+      api_key: os.environ/CEREBRAS_API_KEY
+      api_base: os.environ/CEREBRAS_API_BASE
+      extra_headers:
+        X-Cerebras-3rd-Party-Integration: litellm
+      order: 1
+      rpm: 10
+      tpm: 60000
+      max_parallel_requests: 2
+    model_info:
+      id: coding-cerebras-glm-4-7
+      mode: chat
+      base_model: "cerebras/zai-glm-4.7"
+      tags: ["coding", "glm", "cerebras"]
+
+  - model_name: coding
+    litellm_params:
+      model: "mistral/devstral-latest"
+      api_key: os.environ/MISTRAL_API_KEY
+      order: 2
+      rpm: 2
+      tpm: 500000
+      max_parallel_requests: 2
+    model_info:
+      id: coding-mistral-devstral
+      mode: chat
+      base_model: "mistral/devstral-latest"
+      tags: ["coding", "devstral", "mistral"]
+
+  - model_name: coding
+    litellm_params:
+      model: "openai/glm-4.7"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 1
+      max_parallel_requests: 1
+    model_info:
+      id: coding-ollama-glm-4-7
+      mode: chat
+      base_model: "openai/glm-4.7"
+      tags: ["coding", "glm", "ollama-cloud"]
+
+  - model_name: coding
+    litellm_params:
+      model: "mistral/codestral-latest"
+      api_key: os.environ/MISTRAL_API_KEY
+      order: 3
+      rpm: 2
+      tpm: 500000
+      max_parallel_requests: 2
+    model_info:
+      id: coding-mistral-codestral
+      mode: chat
+      base_model: "mistral/codestral-latest"
+      tags: ["coding", "codestral", "mistral"]
+
+  - model_name: coding
+    litellm_params:
+      model: "openrouter/qwen/qwen3-coder:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 4
+      max_parallel_requests: 2
+    model_info:
+      id: coding-openrouter-qwen3-coder-free
+      mode: chat
+      base_model: "openrouter/qwen/qwen3-coder:free"
+      tags: ["coding", "qwen", "free", "openrouter"]
+
+  - model_name: coding
+    litellm_params:
+      model: "vercel_ai_gateway/alibaba/qwen3-coder-30b-a3b"
+      api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
+      api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
+      order: 5
+      max_parallel_requests: 2
+    model_info:
+      id: coding-vercel-qwen3-coder-30b-a3b
+      mode: chat
+      base_model: "vercel_ai_gateway/alibaba/qwen3-coder-30b-a3b"
+      tags: ["coding", "qwen", "credit-backed", "vercel"]
+
+  - model_name: coding
+    litellm_params:
+      model: "openai/qwen3-coder:480b"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 4
+      max_parallel_requests: 1
+    model_info:
+      id: coding-ollama-qwen3-coder-480b
+      mode: chat
+      base_model: "openai/qwen3-coder:480b"
+      tags: ["coding", "qwen", "ollama-cloud"]
+
+  - model_name: coding
+    litellm_params:
+      model: "groq/qwen/qwen3-32b"
+      api_key: os.environ/GROQ_API_KEY
+      order: 6
+      rpm: 30
+      tpm: 6000
+      max_parallel_requests: 5
+    model_info:
+      id: coding-groq-qwen3-32b
+      mode: chat
+      base_model: "groq/qwen/qwen3-32b"
+      tags: ["coding", "qwen", "groq"]
+
+  - model_name: coding
+    litellm_params:
+      model: "openrouter/deepseek/deepseek-v4-flash:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 7
+      max_parallel_requests: 2
+    model_info:
+      id: coding-openrouter-deepseek-v4-flash-free
+      mode: chat
+      base_model: "openrouter/deepseek/deepseek-v4-flash:free"
+      tags: ["coding", "deepseek", "free", "openrouter"]
+
+  - model_name: coding
+    litellm_params:
+      model: "openrouter/openrouter/free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 8
+      max_parallel_requests: 1
+    model_info:
+      id: coding-openrouter-free-router
+      mode: chat
+      base_model: "openrouter/openrouter/free"
+      tags: ["coding", "free-router", "openrouter", "last-resort"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "gemini/gemini-2.5-flash-lite"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 5
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-gemini-2-5-flash-lite
+      mode: chat
+      base_model: "gemini/gemini-2.5-flash-lite"
+      tags: ["smart-mini", "free-tier", "gemini", "google"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "vercel_ai_gateway/openai/gpt-5-nano"
+      api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
+      api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
+      order: 1
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-vercel-gpt-5-nano
+      mode: chat
+      base_model: "vercel_ai_gateway/openai/gpt-5-nano"
+      tags: ["smart-mini", "credit-backed", "vercel", "openai"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "vercel_ai_gateway/alibaba/qwen3.5-flash"
+      api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
+      api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
+      order: 2
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-vercel-qwen3-5-flash
+      mode: chat
+      base_model: "vercel_ai_gateway/alibaba/qwen3.5-flash"
+      tags: ["smart-mini", "credit-backed", "vercel", "qwen"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "vercel_ai_gateway/openai/gpt-4.1-nano"
+      api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
+      api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
+      order: 3
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-vercel-gpt-4-1-nano
+      mode: chat
+      base_model: "vercel_ai_gateway/openai/gpt-4.1-nano"
+      tags: ["smart-mini", "credit-backed", "vercel", "openai"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "openai/openai/gpt-5-nano"
+      api_base: os.environ/LIGHTNING_AI_API_BASE
+      api_key: os.environ/LIGHTNING_AI_API_KEY
+      order: 1
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-lightning-gpt-5-nano
+      mode: chat
+      base_model: "openai/openai/gpt-5-nano"
+      tags: ["smart-mini", "credit-backed", "lightning", "openai"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "groq/openai/gpt-oss-20b"
+      api_key: os.environ/GROQ_API_KEY
+      order: 4
+      rpm: 30
+      tpm: 6000
+      max_parallel_requests: 5
+    model_info:
+      id: smart-mini-groq-gpt-oss-20b
+      mode: chat
+      base_model: "groq/openai/gpt-oss-20b"
+      tags: ["smart-mini", "gpt-oss", "groq"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "openrouter/openai/gpt-oss-20b:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 6
+      max_parallel_requests: 2
+    model_info:
+      id: smart-mini-openrouter-gpt-oss-20b-free
+      mode: chat
+      base_model: "openrouter/openai/gpt-oss-20b:free"
+      tags: ["smart-mini", "free", "openrouter", "gpt-oss"]
+
+  - model_name: smart-mini
+    litellm_params:
+      model: "openai/gpt-oss:20b"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 4
+      max_parallel_requests: 1
+    model_info:
+      id: smart-mini-ollama-gpt-oss-20b
+      mode: chat
+      base_model: "openai/gpt-oss:20b"
+      tags: ["smart-mini", "gpt-oss", "ollama-cloud"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "gemini/gemini-3.5-flash"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 5
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-gemini-3-5-flash
+      mode: chat
+      base_model: "gemini/gemini-3.5-flash"
+      tags: ["smart-large", "free-tier", "gemini", "google"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "gemini/gemini-2.5-flash"
+      api_key: os.environ/GEMINI_API_KEY
+      order: 6
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-gemini-2-5-flash
+      mode: chat
+      base_model: "gemini/gemini-2.5-flash"
+      tags: ["smart-large", "free-tier", "gemini", "google"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "cerebras/zai-glm-4.7"
+      api_key: os.environ/CEREBRAS_API_KEY
+      api_base: os.environ/CEREBRAS_API_BASE
+      extra_headers:
+        X-Cerebras-3rd-Party-Integration: litellm
+      order: 1
+      rpm: 10
+      tpm: 60000
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-cerebras-glm-4-7
+      mode: chat
+      base_model: "cerebras/zai-glm-4.7"
+      tags: ["smart-large", "glm", "cerebras"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "vercel_ai_gateway/deepseek/deepseek-v4-flash"
+      api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
+      api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
+      order: 2
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-vercel-deepseek-v4-flash
+      mode: chat
+      base_model: "vercel_ai_gateway/deepseek/deepseek-v4-flash"
+      tags: ["smart-large", "credit-backed", "vercel", "deepseek"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openai/glm-4.7"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 1
+      max_parallel_requests: 1
+    model_info:
+      id: smart-large-ollama-glm-4-7
+      mode: chat
+      base_model: "openai/glm-4.7"
+      tags: ["smart-large", "glm", "ollama-cloud"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openai/lightning-ai/kimi-k2.5"
+      api_base: os.environ/LIGHTNING_AI_API_BASE
+      api_key: os.environ/LIGHTNING_AI_API_KEY
+      order: 3
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-lightning-kimi-k2-5
+      mode: chat
+      base_model: "openai/lightning-ai/kimi-k2.5"
+      tags: ["smart-large", "credit-backed", "lightning", "kimi"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openai/lightning-ai/minimax-m2.5"
+      api_base: os.environ/LIGHTNING_AI_API_BASE
+      api_key: os.environ/LIGHTNING_AI_API_KEY
+      order: 4
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-lightning-minimax-m2-5
+      mode: chat
+      base_model: "openai/lightning-ai/minimax-m2.5"
+      tags: ["smart-large", "credit-backed", "lightning", "minimax"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "cerebras/gpt-oss-120b"
+      api_key: os.environ/CEREBRAS_API_KEY
+      api_base: os.environ/CEREBRAS_API_BASE
+      extra_headers:
+        X-Cerebras-3rd-Party-Integration: litellm
+      order: 7
+      rpm: 10
+      tpm: 60000
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-cerebras-gpt-oss-120b
+      mode: chat
+      base_model: "cerebras/gpt-oss-120b"
+      tags: ["smart-large", "gpt-oss", "cerebras"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "groq/openai/gpt-oss-120b"
+      api_key: os.environ/GROQ_API_KEY
+      order: 7
+      rpm: 30
+      tpm: 6000
+      max_parallel_requests: 5
+    model_info:
+      id: smart-large-groq-gpt-oss-120b
+      mode: chat
+      base_model: "groq/openai/gpt-oss-120b"
+      tags: ["smart-large", "gpt-oss", "groq"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openai/gpt-oss:120b"
+      api_base: os.environ/OLLAMA_API_BASE
+      api_key: os.environ/OLLAMA_API_KEY
+      order: 7
+      max_parallel_requests: 1
+    model_info:
+      id: smart-large-ollama-gpt-oss-120b
+      mode: chat
+      base_model: "openai/gpt-oss:120b"
+      tags: ["smart-large", "gpt-oss", "ollama-cloud"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 8
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-openrouter-nemotron-3-super-free
+      mode: chat
+      base_model: "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+      tags: ["smart-large", "free", "openrouter", "nemotron"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openrouter/openai/gpt-oss-120b:free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 9
+      max_parallel_requests: 2
+    model_info:
+      id: smart-large-openrouter-gpt-oss-120b-free
+      mode: chat
+      base_model: "openrouter/openai/gpt-oss-120b:free"
+      tags: ["smart-large", "free", "openrouter", "gpt-oss"]
+
+  - model_name: smart-large
+    litellm_params:
+      model: "openrouter/openrouter/free"
+      api_base: os.environ/OPENROUTER_API_BASE
+      api_key: os.environ/OPENROUTER_API_KEY
+      order: 10
+      max_parallel_requests: 1
+    model_info:
+      id: smart-large-openrouter-free-router
+      mode: chat
+      base_model: "openrouter/openrouter/free"
+      tags: ["smart-large", "free-router", "openrouter", "last-resort"]
+
+litellm_settings:
+  # callbacks: ["langfuse_otel"]
+  json_logs: true
+  request_timeout: 120
+  drop_params: true
+  turn_off_message_logging: false
+  redact_user_api_key_info: true
+  cache: true
+  cache_params:
+    type: redis
+    host: os.environ/REDIS_HOST
+    port: os.environ/REDIS_PORT
+    password: os.environ/REDIS_PASSWORD
+    namespace: litellm:response-cache
+    ttl: 600
+    mode: default_off
+    max_connections: 100
+  enable_redis_auth_cache: true
+
+router_settings:
+  routing_strategy: latency-based-routing
+  redis_host: os.environ/REDIS_HOST
+  redis_port: os.environ/REDIS_PORT
+  redis_password: os.environ/REDIS_PASSWORD
+  enable_pre_call_checks: true
+  num_retries: 2
+  timeout: 120
+  allowed_fails: 2
+  cooldown_time: 60
+  retry_policy:
+    TimeoutErrorRetries: 2
+    RateLimitErrorRetries: 2
+    InternalServerErrorRetries: 2
+    AuthenticationErrorRetries: 0
+    BadRequestErrorRetries: 0
+    ContentPolicyViolationErrorRetries: 0
+  allowed_fails_policy:
+    TimeoutErrorAllowedFails: 3
+    RateLimitErrorAllowedFails: 10000
+    InternalServerErrorAllowedFails: 3
+    AuthenticationErrorAllowedFails: 1
+    BadRequestErrorAllowedFails: 1000
+  fallbacks:
+    - rough-use: ["smart-mini", "smart-large"]
+    - coding: ["smart-large", "rough-use"]
+    - smart-mini: ["rough-use", "smart-large"]
+    - smart-large: ["rough-use", "smart-mini"]
+  context_window_fallbacks:
+    - rough-use: ["smart-large"]
+    - coding: ["smart-large", "rough-use"]
+    - smart-mini: ["smart-large", "rough-use"]
+    - smart-large: ["rough-use"]
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  database_connection_pool_limit: 10
+  database_connection_timeout: 60
+  store_prompts_in_spend_logs: true
+  disable_master_key_return: true
+  background_health_checks: false
+  health_check_interval: 3000
+  health_check_details: false
+  maximum_spend_logs_retention_period: 30d
+  maximum_spend_logs_retention_interval: 1d
+  proxy_batch_write_at: 10
+  global_max_parallel_requests: 50
