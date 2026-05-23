@@ -36,8 +36,7 @@ services:
     image: ${LITELLM_IMAGE:-ghcr.io/berriai/litellm-database:main-latest}
     restart: unless-stopped
     depends_on:
-      redis:
-        condition: service_healthy
+      - redis
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set LITELLM_MASTER_KEY in Portainer stack environment variables}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?Set LITELLM_SALT_KEY in Portainer stack environment variables}
