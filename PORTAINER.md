@@ -30,13 +30,15 @@ After Portainer reports standalone mode, deploy `portainer-stack.yml`.
 
 ```env
 REDIS_MAXMEMORY=64mb
-REDIS_MEM_LIMIT=128m
-REDIS_MEM_RESERVATION=64m
+REDIS_MEM_LIMIT=128M
+REDIS_MEM_RESERVATION=64M
 REDIS_CPUS=0.25
-LITELLM_MEM_LIMIT=700m
-LITELLM_MEM_RESERVATION=400m
+LITELLM_MEM_LIMIT=700M
+LITELLM_MEM_RESERVATION=400M
 LITELLM_CPUS=0.75
 ```
+
+Limits are set via `deploy.resources.limits` (Compose v2 honors these in standalone mode too). `REDIS_MAXMEMORY` uses Redis-native units (`mb`, `gb`); the `*_MEM_LIMIT` / `*_MEM_RESERVATION` values use Compose units (`M`, `G`).
 
 These keep the stack within ~830 MB committed (700 + 128) on a 1 GB instance. Make sure the host has swap configured to absorb LiteLLM startup spikes:
 

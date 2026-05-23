@@ -28,9 +28,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    mem_limit: ${REDIS_MEM_LIMIT:-128m}
-    mem_reservation: ${REDIS_MEM_RESERVATION:-64m}
-    cpus: ${REDIS_CPUS:-0.25}
+    deploy:
+      resources:
+        limits:
+          cpus: "${REDIS_CPUS:-0.25}"
+          memory: ${REDIS_MEM_LIMIT:-128M}
+        reservations:
+          memory: ${REDIS_MEM_RESERVATION:-64M}
     networks:
       - litellm
     <<: *default-logging
@@ -82,9 +86,13 @@ services:
       timeout: 10s
       start_period: 90s
       retries: 5
-    mem_limit: ${LITELLM_MEM_LIMIT:-700m}
-    mem_reservation: ${LITELLM_MEM_RESERVATION:-400m}
-    cpus: ${LITELLM_CPUS:-0.75}
+    deploy:
+      resources:
+        limits:
+          cpus: "${LITELLM_CPUS:-0.75}"
+          memory: ${LITELLM_MEM_LIMIT:-700M}
+        reservations:
+          memory: ${LITELLM_MEM_RESERVATION:-400M}
     networks:
       - litellm
     <<: *default-logging
