@@ -75,7 +75,7 @@ docker compose ps
 docker compose logs -f litellm
 ```
 
-For Portainer, use `portainer-stack.yml` and follow `PORTAINER.md`.
+For Portainer, use `portainer-stack.yml` for standalone Docker or `portainer-swarm-stack.yml` for Docker Swarm. Follow `PORTAINER.md`.
 
 To use the bundled local Postgres instead of a remote database, point `DATABASE_URL` at the Compose service and enable the profile:
 
