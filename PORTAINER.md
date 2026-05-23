@@ -1,8 +1,69 @@
 # Portainer Deployment
 
-Use `portainer-stack.yml` for a standalone Portainer Docker environment. Use `portainer-swarm-stack.yml` if your Portainer endpoint deploys Docker Swarm services. Both stacks run LiteLLM and Redis only; LiteLLM uses your remote Postgres database through `DATABASE_URL`.
+Use `portainer-stack.yml` for a standalone Portainer Docker environment (recommended for small VMs). Use `portainer-swarm-stack.yml` only if your Portainer endpoint deploys Docker Swarm services. Both stacks run LiteLLM and Redis only; LiteLLM uses your remote Postgres database through `DATABASE_URL`.
 
-If Portainer shows errors like `failed to create service`, `tasks will be created`, `Ignoring unsupported options: restart`, or `Only networks scoped to the swarm can be used`, your endpoint is deploying a Swarm stack. Use `portainer-swarm-stack.yml`.
+If Portainer shows errors like `failed to create service`, `tasks will be created`, `Ignoring unsupported options: restart`, or `Only networks scoped to the swarm can be used`, your endpoint is deploying a Swarm stack. Use `portainer-swarm-stack.yml`, or leave Swarm mode and use the standalone stack (see below).
+
+## Use Standalone Docker (No Swarm)
+
+Swarm has noticeable memory overhead (raft + ingress mesh + service DNS). On VMs with 1-2 GB RAM, prefer standalone Docker with `portainer-stack.yml`.
+
+On the Docker host, leave Swarm if it was previously initialized:
+
+```bash
+docker info --format '{{.Swarm.LocalNodeState}}'
+# Expected: inactive
+# If active:
+docker swarm leave --force
+```
+
+Then in Portainer:
+
+1. Open **Environments** -> your environment -> **Update environment** to refresh the detected mode. The environment should now show as standalone Docker (no "Swarm" badge).
+2. If Portainer still treats the environment as Swarm, remove and re-add it.
+
+After Portainer reports standalone mode, deploy `portainer-stack.yml`.
+
+## Low-Memory Hosts (1 GB RAM)
+
+`portainer-stack.yml` ships with conservative resource limits defined as env vars in `portainer.env.example`:
+
+```env
+REDIS_MAXMEMORY=64mb
+REDIS_MEM_LIMIT=128m
+REDIS_MEM_RESERVATION=64m
+REDIS_CPUS=0.25
+LITELLM_MEM_LIMIT=700m
+LITELLM_MEM_RESERVATION=400m
+LITELLM_CPUS=0.75
+```
+
+These keep the stack within ~830 MB committed (700 + 128) on a 1 GB instance. Make sure the host has swap configured to absorb LiteLLM startup spikes:
+
+```bash
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Raise the limits on larger VMs. LiteLLM happily uses 1-2 GB of RAM if you give it.
+
+## Clean Up Before Switching Stack Types
+
+If you previously tried `portainer-stack.yml` on a Swarm endpoint, a leftover bridge network like `litellm_litellm` will still exist and Swarm will refuse to attach services to it. Remove the old stack and any leftover non-overlay networks before redeploying:
+
+1. In Portainer, delete the existing `litellm` stack (Stacks -> select stack -> Remove).
+2. On the Docker host (or via Portainer "Networks" view), remove any leftover bridge networks created by the previous attempt:
+
+```bash
+docker network ls --filter "name=litellm"
+docker network rm litellm_litellm || true
+docker network rm litellm_overlay_net || true
+```
+
+The Swarm stack creates its overlay network as `<stack>_overlay_net` (e.g. `litellm_overlay_net`) to avoid colliding with any leftover `litellm_litellm` network from earlier standalone attempts.
 
 ## Recommended Deployment
 
