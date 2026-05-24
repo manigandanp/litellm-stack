@@ -13,10 +13,16 @@ on:
         description: "Pull latest images before bringing the stack up"
         type: boolean
         default: true
+      litellm_stack_ref:
+        description: "Ref (branch/tag/sha) of manigandanp/litellm-stack to deploy"
+        type: string
+        default: main
   push:
     branches: [main]
+    # The stack files live in a separate repo (manigandanp/litellm-stack)
+    # and are checked out explicitly below. Changes there do NOT trigger
+    # this workflow — use the Run workflow button to deploy a new ref.
     paths:
-      - 'litellm-stack/**'
       - '.github/workflows/litellm-deploy.yml'
 
 concurrency:
@@ -62,8 +68,21 @@ jobs:
           fi
           echo "All required variables present."
 
-      - name: Checkout repo
+      - name: Checkout this repo (deploy workflow)
         uses: actions/checkout@v4
+
+      - name: Checkout litellm-stack repo
+        uses: actions/checkout@v4
+        with:
+          repository: manigandanp/litellm-stack
+          ref:        ${{ inputs.litellm_stack_ref || 'main' }}
+          path:       litellm-stack
+          # Falls back to the workflow's GITHUB_TOKEN, which works for
+          # public repos. For a private litellm-stack repo, set a
+          # repo-scoped PAT or fine-grained token as the
+          # LITELLM_STACK_TOKEN secret.
+          token:      ${{ secrets.LITELLM_STACK_TOKEN || github.token }}
+          fetch-depth: 1
 
       - name: Connect to tailnet
         uses: tailscale/github-action@v3
