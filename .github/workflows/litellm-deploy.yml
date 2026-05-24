@@ -1,0 +1,205 @@
+name: Deploy LiteLLM
+
+# Deploys litellm-stack/docker-compose.yml to a remote host over Tailscale SSH,
+# pulling the env bundle from Cloudflare KV at run time.
+#
+# Setup, secrets, variables, and Tailscale ACL are documented in
+# tasks/github-actions-litellm-deploy/setup.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull_images:
+        description: "Pull latest images before bringing the stack up"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - 'litellm-stack/**'
+      - '.github/workflows/litellm-deploy.yml'
+
+concurrency:
+  group: litellm-deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    # Optional: create a "production" environment in repo settings to add
+    # required reviewers / wait timer. Until then, this is a no-op.
+    environment: production
+
+    env:
+      CLOUDFLARE_API_TOKEN:       ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID:      ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_KV_NAMESPACE_ID: ${{ secrets.CLOUDFLARE_KV_NAMESPACE_ID }}
+      DEPLOY_HOST:                ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER:                ${{ secrets.DEPLOY_USER }}
+      DEPLOY_DIR:                 ${{ secrets.DEPLOY_DIR }}
+      KV_KEY_PREFIX:              ${{ secrets.KV_KEY_PREFIX || 'litellm/prod' }}
+      PULL_IMAGES:                ${{ github.event.inputs.pull_images || 'true' }}
+
+    steps:
+      - name: Validate required GitHub variables
+        run: |
+          set -euo pipefail
+          missing=()
+          for v in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_KV_NAMESPACE_ID \
+                   DEPLOY_HOST DEPLOY_USER DEPLOY_DIR; do
+            if [ -z "${!v:-}" ]; then
+              missing+=("$v")
+            fi
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::Missing required GitHub variables: ${missing[*]}"
+            echo "::error::See tasks/github-actions-litellm-deploy/setup.md section 5."
+            exit 1
+          fi
+          echo "All required variables present."
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Connect to tailnet
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret:    ${{ secrets.TS_OAUTH_SECRET }}
+          tags:            tag:ci
+          hostname:        gha-litellm-${{ github.run_id }}
+          # OAuth-created nodes are ephemeral by default; no cleanup needed.
+          # --accept-routes is harmless and helps in tailnets that advertise subnets.
+          args: --accept-routes
+
+      - name: Verify tailnet reachability
+        run: |
+          set -euo pipefail
+          tailscale status
+          echo "---"
+          # Resolve the deploy host via MagicDNS. Don't fail on `ping`'s
+          # direct-only check; relayed (DERP) is fine for SSH.
+          tailscale ip "$DEPLOY_HOST" || {
+            echo "::error::Cannot resolve $DEPLOY_HOST in the tailnet."
+            echo "::error::Confirm the host is online and your auth key's tag is in tagOwners."
+            exit 1
+          }
+
+      - name: Fetch env bundle from Cloudflare KV
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy
+          KV_KEY="${KV_KEY_PREFIX}/_bundle"
+          url="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces/${CLOUDFLARE_KV_NAMESPACE_ID}/values/${KV_KEY}"
+
+          http_code=$(curl -sS -o .deploy/bundle.json -w '%{http_code}' \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "$url")
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::KV fetch failed (HTTP $http_code) for key '$KV_KEY'."
+            echo "::error::See tasks/github-actions-litellm-deploy/setup.md section 9."
+            head -c 500 .deploy/bundle.json || true
+            exit 1
+          fi
+
+          # Bundle is a JSON object { "KEY": "value", ... }. Convert to dotenv.
+          jq -e 'type == "object"' .deploy/bundle.json > /dev/null
+          jq -r 'to_entries | .[] | "\(.key)=\(.value)"' .deploy/bundle.json > .deploy/.env
+          chmod 600 .deploy/.env
+          count=$(wc -l < .deploy/.env | tr -d ' ')
+          echo "Pulled $count entries from $KV_KEY"
+
+      - name: Verify required env keys are present
+        run: |
+          set -euo pipefail
+          required=(LITELLM_MASTER_KEY LITELLM_SALT_KEY DATABASE_URL REDIS_PASSWORD)
+          missing=()
+          for k in "${required[@]}"; do
+            if ! grep -qE "^${k}=." .deploy/.env; then
+              missing+=("$k")
+            fi
+          done
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "::error::KV bundle is missing required keys: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required keys present."
+
+      - name: Ensure remote install directory exists
+        run: |
+          set -euo pipefail
+          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${DEPLOY_DIR}' && [ -w '${DEPLOY_DIR}' ]"
+
+      - name: Sync stack files to remote
+        run: |
+          set -euo pipefail
+          # tar-over-ssh: works regardless of ssh/rsync flag-compat with
+          # tailscale ssh. Excludes anything env-like, tooling, docs, and
+          # the alternate Portainer/Swarm composes.
+          tar -C litellm-stack -czf - \
+              --exclude='.env*' \
+              --exclude='portainer*' \
+              --exclude='tools' \
+              --exclude='*.md' \
+              --exclude='.gitignore' \
+              . \
+            | tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                "tar -C '${DEPLOY_DIR}' -xzf -"
+
+      - name: Copy .env to remote (chmod 600)
+        run: |
+          set -euo pipefail
+          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "umask 077 && cat > '${DEPLOY_DIR}/.env' && chmod 600 '${DEPLOY_DIR}/.env'" \
+            < .deploy/.env
+
+      - name: Deploy with docker compose
+        run: |
+          set -euo pipefail
+          if [ "$PULL_IMAGES" = "true" ]; then
+            tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "cd '${DEPLOY_DIR}' && docker compose --env-file .env pull"
+          fi
+          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_DIR}' && docker compose --env-file .env up -d --remove-orphans"
+
+      - name: Wait for /health/liveliness
+        run: |
+          set -euo pipefail
+          litellm_port=$(grep -E '^LITELLM_PORT=' .deploy/.env | cut -d= -f2- | tr -d '"' || true)
+          [ -z "$litellm_port" ] && litellm_port=4000
+          echo "Probing litellm on remote port $litellm_port"
+
+          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "
+            set -e
+            for i in \$(seq 1 30); do
+              if curl -fsS http://127.0.0.1:${litellm_port}/health/liveliness > /dev/null; then
+                echo \"litellm healthy on attempt \$i\"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo 'litellm did not become healthy in 60s' >&2
+            cd '${DEPLOY_DIR}' && docker compose logs --tail=200 litellm >&2 || true
+            exit 1
+          "
+
+      - name: Print deployed compose status
+        if: always()
+        run: |
+          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_DIR}' && docker compose ps" || true
+
+      - name: Shred runner-side env
+        if: always()
+        run: |
+          if [ -f .deploy/.env ]; then
+            shred -uz .deploy/.env 2>/dev/null || rm -f .deploy/.env
+          fi
+          rm -rf .deploy
