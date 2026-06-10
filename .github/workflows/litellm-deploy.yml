@@ -186,7 +186,7 @@ jobs:
               "cd '${DEPLOY_DIR}' && docker compose --env-file .env pull"
           fi
           tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_DIR}' && docker compose --env-file .env up -d --remove-orphans"
+            "cd '${DEPLOY_DIR}' && docker compose --env-file .env up -d --force-recreate --remove-orphans"
 
       - name: Wait for /health/liveliness
         run: |
