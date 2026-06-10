@@ -109,10 +109,21 @@ docker compose down -v
 
 Clients should call these four aliases instead of provider-specific model IDs:
 
-- `rough-use`: summarization, rewriting, story generation, and everyday prompts. Ordered as Gemini Flash/Lite, GPT-OSS on Groq/Cerebras/Ollama, Mistral Large, then OpenRouter free routes.
+- `rough-use`: summarization, rewriting, story generation, and everyday prompts. Ordered as GPT-OSS (Cerebras → Groq → Ollama), Gemini Flash/Lite, Mistral Large, then OpenRouter free routes.
 - `coding`: code generation, debugging, refactors, and agentic coding. Ordered as Cerebras/Ollama GLM 4.7, Devstral, Codestral, Qwen Coder, Groq Qwen, DeepSeek free, then OpenRouter's free router.
 - `smart-mini`: cheap/free small-model work. Ordered as Gemini Flash-Lite, Vercel GPT/Qwen nano-class models, Lightning GPT-5 Nano, Groq/Ollama GPT-OSS 20B, then OpenRouter GPT-OSS 20B free.
 - `smart-large`: stronger low-cost reasoning/general work. Ordered as Gemini 3.5/2.5 Flash, Cerebras/Ollama GLM 4.7, DeepSeek/Kimi/MiniMax gateways, GPT-OSS, Nemotron free, then OpenRouter's free router.
+
+Every distinct model is now also directly addressable by its family `model_name` (e.g. `gpt-oss-120b`, `glm-4.7`, `qwen3-coder-480b`, `gpt-5-nano`), which load-balances across all of its providers. The four use-case aliases above remain the recommended entry points for clients and are unchanged.
+
+Four capability-filtered aliases split `rough-use` and `coding` by reasoning capability:
+
+- `rough-use-reasoning`: reasoning-capable subset of `rough-use` (GPT-OSS family + Gemini 2.5 Flash Lite + OpenRouter free). Fallback: `rough-use` -> `smart-large`.
+- `rough-use-instant`: non-reasoning subset (Gemini 2.0 Flash/Lite + Mistral Large). Fallback: `rough-use`.
+- `coding-reasoning`: reasoning-capable subset of `coding` (GLM 4.7 + Groq Qwen 3 32B + DeepSeek free). Fallback: `smart-large` -> `coding`.
+- `coding-instant`: non-reasoning subset (Devstral + Codestral + Qwen Coder + OpenRouter free). Fallback: `coding`.
+
+Every deployment also carries `model_info.supports_function_calling` (false for Codestral and the free router; true for everything else) and `model_info.supports_reasoning` (true/false per the split above) for capability-aware routing.
 
 Deployment priority is configured with `litellm_params.order`; lower values are tried first. Keep `router_settings.enable_pre_call_checks: true`, because LiteLLM uses it for ordered deployment selection.
 
