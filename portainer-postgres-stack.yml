@@ -1,0 +1,90 @@
+# Portainer stack: standalone Postgres for LiteLLM
+#
+# Deploys a single Postgres 16 instance to host the LiteLLM database when you
+# outgrow a managed free tier (e.g. Neon). Tuned for an Oracle Cloud Always-Free
+# AMD instance (1/8 OCPU, 1 GB RAM, Ubuntu 24.04) running Portainer.
+#
+# Deploy in Portainer: Stacks -> Add stack -> Web editor -> paste this file.
+# Set the variables under "environment" in the Portainer UI (or via .env if
+# using Git/Upload). Do NOT commit real secrets.
+#
+# After deploy, point LiteLLM at it:
+#   DATABASE_URL=postgresql://litellm:<POSTGRES_PASSWORD>@<oracle-host>:5432/litellm
+# Over Tailscale, <oracle-host> is the MagicDNS name or Tailscale IP of the
+# Oracle instance. No sslmode is needed on the same tailnet; add
+# ?sslmode=require only if you terminate TLS in front of Postgres.
+#
+# Security notes:
+#   - The DB port is bound to 127.0.0.1 and the Tailscale interface only, not
+#     0.0.0.0, so it is not exposed to the public internet. Adjust the bind
+#     in POSTGRES_BIND if your Tailscale interface name differs.
+#   - POSTGRES_PASSWORD is the superuser password. LiteLLM only needs the
+#     `litellm` role; keep the superuser password separate and rarely used.
+#   - The volume is a named Docker volume so data survives container
+#     recreation. Back it up with `pg_dump` on a schedule (see comments below).
+#
+# Memory budget (1 GB box, ~34% used by OS/Portainer/Tailscale ≈ 340 MB):
+#   shared_buffers        128 MB  (~12% of RAM; conservative for 1 GB)
+#   effective_cache_size  512 MB  (planner hint; relies on OS page cache)
+#   work_mem              2 MB    (per-sort; small to avoid N*work_mem blowups)
+#   maintenance_work_mem  32 MB   (VACUUM/CREATE INDEX; brief, bounded)
+#   max_connections       25      (each conn ~5-10 MB; 25 keeps headroom)
+#   Total steady-state Postgres RAM target: well under 400 MB, leaving room
+#   for the OS page cache and Portainer. If the box swaps or OOMs, lower
+#   shared_buffers to 64 MB and max_connections to 15.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: litellm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-litellm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the stack env}
+      POSTGRES_DB: ${POSTGRES_DB:-litellm}
+      # Tune for the Oracle Always-Free AMD box (1/8 OCPU, 1 GB RAM). These
+      # values keep Postgres well under ~400 MB steady-state so the OS page
+      # cache and Portainer have headroom. See the memory budget in the file
+      # header. If the box swaps or OOM-kills Postgres, drop shared_buffers to
+      # 64 MB and max_connections to 15.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    command:
+      - postgres
+      - -c
+      - max_connections=25
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=512MB
+      - -c
+      - work_mem=2MB
+      - -c
+      - maintenance_work_mem=32MB
+      - -c
+      - wal_buffers=4MB
+      - -c
+      - max_wal_size=256MB
+      - -c
+      - log_min_duration_statement=1000
+    ports:
+      # Bind only to the Tailscale interface + loopback so Postgres is not on
+      # the public internet. Replace tailscale0 with your interface (run
+      # `ip -o addr show` on the Oracle box) if it differs. If you'd rather
+      # not bind to a specific interface, use "127.0.0.1:5432:5432" and reach
+      # the DB over a Tailscale-sidecar / SSH tunnel instead.
+      - "${POSTGRES_BIND:-127.0.0.1}:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
