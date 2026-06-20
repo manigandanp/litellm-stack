@@ -1,2 +1,4 @@
 /tasks
 /tmp_dir 
+.env.json
+.env
