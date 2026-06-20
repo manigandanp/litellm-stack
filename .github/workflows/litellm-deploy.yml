@@ -193,18 +193,37 @@ jobs:
           set -euo pipefail
           litellm_port=$(grep -E '^LITELLM_PORT=' .deploy/.env | cut -d= -f2- | tr -d '"' || true)
           [ -z "$litellm_port" ] && litellm_port=4000
-          echo "Probing litellm on remote port $litellm_port"
+          # The litellm container's own healthcheck has start_period=45s +
+          # interval=30s + retries=5, so it can take ~3 min to report healthy
+          # (e.g. on first deploy while DB migrations run). The old 30x2s=60s
+          # loop gave up during the container's start_period grace window.
+          # Use a deadline-based loop with a 240s budget to match.
+          echo "Probing litellm on remote port $litellm_port (up to 240s)"
 
-          tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "
+          # Hard safety net around the whole SSH call. The remote deadline
+          # loop only progresses if each curl returns; without --max-time a
+          # litellm that accepts the TCP connection but never responds (e.g.
+          # blocked on DB migration) makes a single curl hang forever, so the
+          # deadline is never re-checked and the step stalls until the GHA 6h
+          # job limit. --connect-timeout/--max-time bound each probe; `timeout`
+          # bounds the process if the SSH session itself hangs (SIGTERM at 300s,
+          # SIGKILL 30s later if still alive).
+          timeout -k 30 300 tailscale ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "
             set -e
-            for i in \$(seq 1 30); do
-              if curl -fsS http://127.0.0.1:${litellm_port}/health/liveliness > /dev/null; then
-                echo \"litellm healthy on attempt \$i\"
+            deadline=\$(( \$(date +%s) + 240 ))
+            attempt=0
+            while [ \$(date +%s) -lt \$deadline ]; do
+              attempt=\$(( attempt + 1 ))
+              if curl --connect-timeout 5 --max-time 10 -fsS \
+                  http://127.0.0.1:${litellm_port}/health/liveliness > /dev/null; then
+                echo \"litellm healthy on attempt \$attempt\"
                 exit 0
               fi
+              echo \"  attempt \$attempt: not healthy yet, retrying in 2s...\"
               sleep 2
             done
-            echo 'litellm did not become healthy in 60s' >&2
+            echo 'litellm did not become healthy within 240s' >&2
+            cd '${DEPLOY_DIR}' && docker compose ps >&2 || true
             cd '${DEPLOY_DIR}' && docker compose logs --tail=200 litellm >&2 || true
             exit 1
           "
