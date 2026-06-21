@@ -517,7 +517,6 @@ model_list:
     model: vercel_ai_gateway/anthropic/claude-opus-4.8
     api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
     api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
-    order: 1
     max_parallel_requests: 2
   model_info:
     id: claude-opus-4.8__vercel
@@ -534,7 +533,6 @@ model_list:
     model: openai/anthropic/claude-opus-4-8
     api_key: os.environ/LIGHTNING_AI_API_KEY
     api_base: os.environ/LIGHTNING_AI_API_BASE
-    order: 2
     max_parallel_requests: 2
   model_info:
     id: claude-opus-4.8__lightning
@@ -1293,10 +1291,15 @@ router_settings:
     models:
     - smart-large
     routing_strategy: simple-shuffle
+  - group_name: claude-opus-4-8-random
+    models:
+    - claude-opus-4.8
+    routing_strategy: simple-shuffle
   redis_host: os.environ/REDIS_HOST
   redis_port: os.environ/REDIS_PORT
   redis_password: os.environ/REDIS_PASSWORD
   enable_pre_call_checks: true
+  enable_weighted_failover: true
   num_retries: 2
   timeout: 120
   allowed_fails: 2
