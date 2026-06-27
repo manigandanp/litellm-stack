@@ -29,6 +29,7 @@ services:
 
   redis:
     image: redis:7.2-alpine
+    profiles: ["local-redis"]
     restart: unless-stopped
     command:
       - sh
@@ -56,9 +57,6 @@ services:
   litellm:
     image: ${LITELLM_IMAGE:-ghcr.io/berriai/litellm-database:main-latest}
     restart: unless-stopped
-    depends_on:
-      redis:
-        condition: service_healthy
     env_file:
       - path: .env
         required: false
@@ -66,8 +64,8 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set LITELLM_MASTER_KEY in .env}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:?Set LITELLM_SALT_KEY in .env}
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST:?Set REDIS_HOST in .env}
+      REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
