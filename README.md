@@ -8,7 +8,7 @@ Docker-based LiteLLM proxy for aggregating direct providers, free routers, and c
 - remote Postgres: durable LiteLLM database for virtual keys, teams, users, spend, and metadata
 - `redis`: shared router state, auth cache, and optional response cache
 
-Redis can be either a remote Redis you operate or the bundled local container. For production, set `REDIS_HOST` to your remote Redis host (e.g. the same Tailscale tailnet host as Postgres). For local development, run the bundled Redis with `docker compose --profile local-redis --env-file .env up -d` and set `REDIS_HOST=redis` in `.env`. The local Redis is an internal Docker service and is not published to the host. A local Postgres container is also available through the optional `local-db` Compose profile for development.
+Postgres and Redis are external/managed in production, reached via the remote `DATABASE_URL` and `REDIS_HOST`. For local development the same Compose file bundles a Postgres (`local-db` profile) and Redis (`local-redis` profile) service; these only start when their profiles are active so the identical `docker compose --env-file .env up -d` command starts everything locally and only LiteLLM in prod. Local dev sets `COMPOSE_PROFILES=local-db,local-redis` in `.env` and points `DATABASE_URL`/`REDIS_HOST` at the `postgres`/`redis` service names. Prod/deploy env bundles must NOT set `COMPOSE_PROFILES`. The local services are internal Docker services and not published to the host.
 
 ## Setup
 
@@ -79,7 +79,7 @@ LANGFUSE_OTEL_HOST=https://cloud.langfuse.com
 
 Use `https://us.cloud.langfuse.com` instead if your Langfuse project is in the US region.
 
-Start the stack:
+Start the stack. The same command starts everything locally and only LiteLLM in prod — which services come up is driven by `COMPOSE_PROFILES` in `.env` (see "What Runs" above):
 
 ```bash
 docker compose --env-file .env up -d
@@ -87,23 +87,27 @@ docker compose ps
 docker compose logs -f litellm
 ```
 
+For local dev the bundled `.env.example` already ships `COMPOSE_PROFILES=local-db,local-redis`, so the command above starts the bundled Postgres and Redis too. The deploy workflow's prod/KV env bundle deliberately omits `COMPOSE_PROFILES`, so the same command starts only LiteLLM there and `--remove-orphans` tears down any stray local pg/redis containers.
+
 For Portainer, use `portainer-stack.yml` for standalone Docker or `portainer-swarm-stack.yml` for Docker Swarm. Follow `PORTAINER.md`.
 
-To use the bundled local Postgres instead of a remote database, point `DATABASE_URL` at the Compose service and enable the profile:
+To run the bundled local Postgres only (no remote DB), set `COMPOSE_PROFILES` to include `local-db` and point `DATABASE_URL` at the Compose service:
 
 ```bash
+COMPOSE_PROFILES=local-db
 DATABASE_URL=postgresql://litellm:change-this-postgres-password@postgres:5432/litellm
-docker compose --profile local-db --env-file .env up -d
+docker compose --env-file .env up -d
 ```
 
-To use the bundled local Redis instead of a remote Redis, set `REDIS_HOST=redis` in `.env` and enable the profile:
+To run the bundled local Redis only (no remote Redis), set `COMPOSE_PROFILES` to include `local-redis` and set `REDIS_HOST=redis` in `.env`:
 
 ```bash
+COMPOSE_PROFILES=local-redis
 REDIS_HOST=redis
-docker compose --profile local-redis --env-file .env up -d
+docker compose --env-file .env up -d
 ```
 
-You can combine both for fully local dev:
+You can also pass profiles inline for one-off commands without editing `.env`:
 
 ```bash
 docker compose --profile local-db --profile local-redis --env-file .env up -d
