@@ -149,6 +149,19 @@ jobs:
           fi
           echo "All required keys present."
 
+          # Defensively enforce that the prod bundle does NOT enable the
+          # bundled local Postgres/Redis compose profiles. The deploy command
+          # is `up -d --force-recreate --remove-orphans`; if COMPOSE_PROFILES
+          # leaked into the prod env, the `postgres`/`redis` services (gated
+          # behind local-db/local-redis) would start on the prod host instead
+          # of relying on the external DATABASE_URL/REDIS_HOST.
+          if grep -qE '^COMPOSE_PROFILES=' .deploy/.env; then
+            echo "::error::COMPOSE_PROFILES must not be set in the prod/KV env bundle.
+            echo "::error::It enables the bundled local Postgres/Redis services, which must stay off in prod."
+            exit 1
+          fi
+          echo "Prod env correctly excludes COMPOSE_PROFILES (only litellm will start)."
+
       - name: Ensure remote install directory exists
         run: |
           set -euo pipefail
