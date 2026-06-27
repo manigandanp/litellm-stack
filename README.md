@@ -8,7 +8,7 @@ Docker-based LiteLLM proxy for aggregating direct providers, free routers, and c
 - remote Postgres: durable LiteLLM database for virtual keys, teams, users, spend, and metadata
 - `redis`: shared router state, auth cache, and optional response cache
 
-Redis is an internal Docker service and is not published to the host. A local Postgres container is still available through the optional `local-db` Compose profile for development.
+Redis can be either a remote Redis you operate or the bundled local container. For production, set `REDIS_HOST` to your remote Redis host (e.g. the same Tailscale tailnet host as Postgres). For local development, run the bundled Redis with `docker compose --profile local-redis --env-file .env up -d` and set `REDIS_HOST=redis` in `.env`. The local Redis is an internal Docker service and is not published to the host. A local Postgres container is also available through the optional `local-db` Compose profile for development.
 
 ## Setup
 
@@ -31,6 +31,18 @@ DATABASE_URL=postgresql://user:password@remote-postgres-host:5432/litellm?sslmod
 
 URL-encode the password if it contains special characters such as `@`, `:`, `/`, `?`, or `#`.
 For Neon/Supabase-style databases, use the direct Postgres URL rather than the pooled/PgBouncer URL because LiteLLM runs Prisma migrations during startup.
+
+Point LiteLLM at your remote Redis for router state and caching:
+
+```bash
+REDIS_HOST=remote-redis-host
+REDIS_PORT=6379
+REDIS_PASSWORD=your-redis-password
+```
+
+Over Tailscale, `remote-redis-host` is the MagicDNS name or Tailscale IP of the
+box running Redis; no TLS is needed on the same tailnet. URL-encode the
+password if it contains special characters.
 
 Set the provider keys you want to use in `.env`:
 
@@ -84,14 +96,27 @@ DATABASE_URL=postgresql://litellm:change-this-postgres-password@postgres:5432/li
 docker compose --profile local-db --env-file .env up -d
 ```
 
-When switching an existing stack from bundled Postgres to remote Postgres, clean up the old local Postgres container first:
+To use the bundled local Redis instead of a remote Redis, set `REDIS_HOST=redis` in `.env` and enable the profile:
 
 ```bash
-docker compose --profile local-db --env-file .env down
+REDIS_HOST=redis
+docker compose --profile local-redis --env-file .env up -d
+```
+
+You can combine both for fully local dev:
+
+```bash
+docker compose --profile local-db --profile local-redis --env-file .env up -d
+```
+
+When switching an existing stack from bundled Postgres/Redis to the remote services, clean up the old local containers first:
+
+```bash
+docker compose --profile local-db --profile local-redis --env-file .env down
 docker compose --env-file .env up -d
 ```
 
-This stops the old local Postgres container without deleting its volume. Add `-v` to `down` only if you intentionally want to delete local Postgres and Redis data.
+This stops the old local Postgres and Redis containers without deleting their volumes. Add `-v` to `down` only if you intentionally want to delete local Postgres and Redis data.
 
 Stop it without deleting data:
 
