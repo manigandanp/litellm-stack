@@ -1,0 +1,77 @@
+# Portainer stack: standalone Redis for LiteLLM
+#
+# Deploys a single Redis 7 instance used by LiteLLM for router state, the auth
+# cache, and the optional response cache. Tuned for an Oracle Cloud Always-Free
+# AMD instance (1/8 OCPU, 1 GB RAM, Ubuntu 24.04) running Portainer, alongside
+# the Postgres stack in portainer-postgres-stack.yml.
+#
+# Deploy in Portainer: Stacks -> Add stack -> Web editor -> paste this file.
+# Set the variables under "environment" in the Portainer UI (or via .env if
+# using Git/Upload). Do NOT commit real secrets.
+#
+# After deploy, point LiteLLM at it:
+#   REDIS_HOST=100.112.240.54   # Tailscale IP/MagicDNS of the Oracle instance
+#   REDIS_PORT=6379
+#   REDIS_PASSWORD=<same value as REDIS_PASSWORD below>
+#
+# Over Tailscale, <oracle-host> is the MagicDNS name or Tailscale IP of the
+# Oracle instance. No TLS is needed on the same tailnet.
+#
+# Security notes:
+#   - The Redis port is bound to 127.0.0.1 and the Tailscale interface only,
+#     not 0.0.0.0, so it is not exposed to the public internet. Adjust the bind
+#     in REDIS_BIND if your Tailscale interface name differs. Confirm with
+#     `ip -o addr show` on the Oracle box.
+#   - requirepass is mandatory; there is no anonymous access.
+#   - The volume is a named Docker volume so AOF/data survives container
+#     recreation. maxmemory-policy is allkeys-lru so Redis self-trims under
+#     memory pressure rather than OOM-ing.
+#
+# Memory budget (1 GB box, shared with Postgres + OS/Portainer/Tailscale):
+#   maxmemory            64 MB   (LiteLLM cache state is small; raise if you
+#                                 enable heavy prompt response caching)
+#   AOF appendonly       yes     (durability for router/auth state)
+#   Total Redis RAM target: ~70-90 MB steady state. If the box swaps or OOMs
+#   alongside Postgres, drop maxmemory to 32 MB first; only raise it once the
+#   combined memory headroom is verified.
+
+services:
+  redis:
+    image: redis:7.2-alpine
+    container_name: litellm-redis
+    restart: unless-stopped
+    command:
+      - sh
+      - -c
+      - >
+        exec redis-server
+        --appendonly yes
+        --requirepass "$${REDIS_PASSWORD}"
+        --maxmemory "$${REDIS_MAXMEMORY:-64mb}"
+        --maxmemory-policy allkeys-lru
+        --save 60 1
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in the stack env}
+      REDIS_MAXMEMORY: ${REDIS_MAXMEMORY:-64mb}
+    ports:
+      # Bind only to the Tailscale interface + loopback so Redis is not on the
+      # public internet. Replace tailscale0 with your interface (run
+      # `ip -o addr show` on the Oracle box) if it differs. If you'd rather not
+      # bind to a specific interface, use "127.0.0.1:6379:6379" and reach Redis
+      # over an SSH tunnel / Tailscale-sidecar instead.
+      - "${REDIS_BIND:-127.0.0.1}:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  redis_data:
