@@ -156,7 +156,7 @@ jobs:
           # behind local-db/local-redis) would start on the prod host instead
           # of relying on the external DATABASE_URL/REDIS_HOST.
           if grep -qE '^COMPOSE_PROFILES=' .deploy/.env; then
-            echo "::error::COMPOSE_PROFILES must not be set in the prod/KV env bundle.
+            echo "::error::COMPOSE_PROFILES must not be set in the prod/KV env bundle."
             echo "::error::It enables the bundled local Postgres/Redis services, which must stay off in prod."
             exit 1
           fi
