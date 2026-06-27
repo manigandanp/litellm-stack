@@ -20,6 +20,146 @@ model_list:
 ###############################################################################
 # Section 1: Model-family groups
 ###############################################################################
+- model_name: glm-5.2
+  litellm_params:
+    model: openai/glm-5.2
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 1
+    max_parallel_requests: 10
+  model_info:
+    id: glm-5.2__opencode-primary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: glm-5.2
+    tags:
+    - opencode-go
+    - premium
+- model_name: glm-5.2
+  litellm_params:
+    model: openai/glm-5.2
+    api_key: os.environ/OPENCODE_GO_SECONDARY_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 2
+    max_parallel_requests: 10
+  model_info:
+    id: glm-5.2__opencode-secondary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: glm-5.2
+    tags:
+    - opencode-go
+    - premium
+
+- model_name: kimi-k2.7-code
+  litellm_params:
+    model: openai/kimi-k2.7-code
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 1
+    max_parallel_requests: 10
+  model_info:
+    id: kimi-k2.7-code__opencode-primary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: kimi-k2.7-code
+    tags:
+    - opencode-go
+    - premium
+- model_name: kimi-k2.7-code
+  litellm_params:
+    model: openai/kimi-k2.7-code
+    api_key: os.environ/OPENCODE_GO_SECONDARY_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 2
+    max_parallel_requests: 10
+  model_info:
+    id: kimi-k2.7-code__opencode-secondary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: kimi-k2.7-code
+    tags:
+    - opencode-go
+    - premium
+
+- model_name: deepseek-v4-pro
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 1
+    max_parallel_requests: 10
+  model_info:
+    id: deepseek-v4-pro__opencode-primary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: deepseek-v4-pro
+    tags:
+    - opencode-go
+    - premium
+- model_name: deepseek-v4-pro
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_key: os.environ/OPENCODE_GO_SECONDARY_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 2
+    max_parallel_requests: 10
+  model_info:
+    id: deepseek-v4-pro__opencode-secondary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: deepseek-v4-pro
+    tags:
+    - opencode-go
+    - premium
+
+- model_name: deepseek-v4-flash
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 1
+    max_parallel_requests: 10
+  model_info:
+    id: deepseek-v4-flash__opencode-primary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: deepseek-v4-flash
+    tags:
+    - opencode-go
+    - premium
+- model_name: deepseek-v4-flash
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_key: os.environ/OPENCODE_GO_SECONDARY_API_KEY
+    api_base: os.environ/OPENCODE_GO_BASE
+    custom_llm_provider: openai
+    order: 2
+    max_parallel_requests: 10
+  model_info:
+    id: deepseek-v4-flash__opencode-secondary
+    mode: chat
+    supports_function_calling: true
+    supports_reasoning: true
+    base_model: deepseek-v4-flash
+    tags:
+    - opencode-go
+    - premium
+
 
 - model_name: gpt-oss-120b
   litellm_params:
@@ -227,12 +367,12 @@ model_list:
     - qwen
     - vercel
     - credit-backed
-- model_name: deepseek-v4-flash
+- model_name: deepseek-v4-flash-free
   litellm_params:
     model: vercel_ai_gateway/deepseek/deepseek-v4-flash
     api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
     api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
-    order: 1
+    order: 3
     max_parallel_requests: 2
   model_info:
     id: deepseek-v4-flash__vercel
@@ -244,12 +384,12 @@ model_list:
     - deepseek
     - vercel
     - credit-backed
-- model_name: deepseek-v4-flash
+- model_name: deepseek-v4-flash-free
   litellm_params:
     model: openrouter/deepseek/deepseek-v4-flash:free
     api_key: os.environ/OPENROUTER_API_KEY
     api_base: os.environ/OPENROUTER_API_BASE
-    order: 2
+    order: 4
     max_parallel_requests: 2
   model_info:
     id: deepseek-v4-flash__openrouter
@@ -477,12 +617,12 @@ model_list:
     - qwen
     - vercel
     - credit-backed
-- model_name: glm-5.2
+- model_name: glm-5.2-free
   litellm_params:
     model: vercel_ai_gateway/zai/glm-5.2
     api_key: os.environ/VERCEL_AI_GATEWAY_API_KEY
     api_base: os.environ/VERCEL_AI_GATEWAY_API_BASE
-    order: 1
+    order: 3
     max_parallel_requests: 2
   model_info:
     id: glm-5.2__vercel
